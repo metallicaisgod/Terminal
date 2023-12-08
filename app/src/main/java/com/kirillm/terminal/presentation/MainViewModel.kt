@@ -35,6 +35,11 @@ class MainViewModel : ViewModel() {
             _screenState.value = TerminalScreenState.Content(barsList = result.barsList, timeFrame)
         }
     }
+
+    fun showBarInfo(bar: Bar) {
+        val currentState = _screenState.value as TerminalScreenState.Content
+        _screenState.value = TerminalScreenState.Content(currentState.barsList, currentState.timeFrame, bar)
+    }
 }
 
 sealed class TerminalScreenState {
@@ -43,5 +48,5 @@ sealed class TerminalScreenState {
 
     object Loading : TerminalScreenState()
 
-    data class Content(val barsList: List<Bar>, val timeFrame: TimeFrame) : TerminalScreenState()
+    data class Content(val barsList: List<Bar>, val timeFrame: TimeFrame, val barForInfo: Bar? = null) : TerminalScreenState()
 }

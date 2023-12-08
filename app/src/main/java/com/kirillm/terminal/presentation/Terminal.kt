@@ -3,18 +3,21 @@ package com.kirillm.terminal.presentation
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -22,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect.Companion.dashPathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextMeasurer
@@ -53,11 +57,15 @@ fun Terminal(
             Chart(
                 modifier = modifier,
                 terminalState = terminalState,
-                timeFrame = currentState.timeFrame
+                timeFrame = currentState.timeFrame,
+                onTerminalStateChanged = {
+                    terminalState.value = it
+                },
+                onClickListener = {
+                    viewModel.showBarInfo(it)
+                }
             )
-            {
-                terminalState.value = it
-            }
+
 
             currentState.barsList.firstOrNull()?.let {
                 Prices(
@@ -69,6 +77,53 @@ fun Terminal(
 
             TimeFrames(currentTimeFrame = currentState.timeFrame) {
                 viewModel.loadContent(it)
+            }
+
+            val barForInfo = currentState.barForInfo
+            if (barForInfo != null) {
+
+                Box(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .padding(top = 100.dp, start = 16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .background(Color.Black)
+                            .border(BorderStroke(1.dp, Color.White), RoundedCornerShape(10.dp))
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        val index = currentState.barsList.indexOf(barForInfo)
+                        Text(
+                            text = index.toString(),
+                            color = Color.White
+                        )
+                        Text(
+                            text = barForInfo.open.toString(),
+                            color = Color.White
+                        )
+                        Text(
+                            barForInfo.close.toString(),
+                            color = Color.White
+                        )
+                        Text(
+                            barForInfo.high.toString(),
+                            color = Color.White
+                        )
+                        Text(
+                            barForInfo.low.toString(),
+                            color = Color.White
+                        )
+                        val day = barForInfo.calendarDate.get(Calendar.DAY_OF_MONTH)
+                        val month = barForInfo.calendarDate.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault())
+                        val hour =  barForInfo.calendarDate.get(Calendar.HOUR_OF_DAY)
+                        Text(
+                            String.format("%d %s, %02d:00", day, month, hour),
+                            color = Color.White
+                        )
+                    }
+                }
             }
         }
         TerminalScreenState.Initial -> {}
@@ -126,6 +181,7 @@ private fun Chart(
     terminalState: State<TerminalState>,
     timeFrame: TimeFrame,
     onTerminalStateChanged: (TerminalState) -> Unit,
+    onClickListener: (Bar) -> Unit,
 ) {
     val currentState = terminalState.value
     val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
@@ -148,6 +204,10 @@ private fun Chart(
 
     val timeMeasurer = rememberTextMeasurer()
 
+    val clickOffsetX = rememberSaveable() {
+        mutableStateOf(0f)
+    }
+
     Canvas(
         modifier = modifier
             .fillMaxSize()
@@ -164,12 +224,18 @@ private fun Chart(
                     )
                 )
             }
+            .pointerInput(key1 = Unit) {
+                detectTapGestures {
+                    clickOffsetX.value = it.x
+                }
+            }
+
     ) {
         with(currentState) {
-            translate(scrolledBy) {
+            translate(left = scrolledBy) {
                 barList.forEachIndexed { index, bar ->
                     val offsetX = size.width - index * barWidth
-
+//                    Log.d("Terminal", offsetX.toString())
                     drawTimeDelimiters(
                         bar = bar,
                         nextBar = if (index < barList.size - 1) {
@@ -194,6 +260,7 @@ private fun Chart(
                         ),
                         strokeWidth = 2f
                     )
+
                     val color =
                         if (bar.open > bar.close) Color.Red else Color.Green
                     drawLine(
@@ -208,6 +275,11 @@ private fun Chart(
                         ),
                         strokeWidth = barWidth / 2
                     )
+                    val clickOffset = (size.width - clickOffsetX.value)
+                    if (clickOffset in ((offsetX - barWidth / 4)..(offsetX + barWidth / 4))) {
+                        Log.d("Terminal", "Click: $clickOffset")
+                        onClickListener(bar)
+                    }
                 }
             }
         }
@@ -265,7 +337,6 @@ fun DrawScope.drawTimeDelimiters(
         }
         TimeFrame.MIN_30, TimeFrame.HOUR_1 -> {
             val nextBarDay = nextBar?.calendarDate?.get(Calendar.DAY_OF_MONTH)
-            Log.d("Terminal", "$day $nextBarDay")
             day != nextBarDay
         }
     }

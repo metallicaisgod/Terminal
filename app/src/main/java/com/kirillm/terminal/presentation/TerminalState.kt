@@ -21,7 +21,7 @@ data class TerminalState(
     val barWidth: Float
         get() = terminalWidth / visibleBarsCount
 
-    val visibleBars: List<Bar>
+    private val visibleBars: List<Bar>
         get() {
             val startIndex = (scrolledBy / barWidth).roundToInt().coerceAtLeast(0)
             val endIndex = (startIndex + visibleBarsCount).coerceAtMost(barList.size)
