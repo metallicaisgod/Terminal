@@ -116,8 +116,12 @@ fun Terminal(
                             color = Color.White
                         )
                         val day = barForInfo.calendarDate.get(Calendar.DAY_OF_MONTH)
-                        val month = barForInfo.calendarDate.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault())
-                        val hour =  barForInfo.calendarDate.get(Calendar.HOUR_OF_DAY)
+                        val month = barForInfo.calendarDate.getDisplayName(
+                            Calendar.MONTH,
+                            Calendar.SHORT,
+                            Locale.getDefault()
+                        )
+                        val hour = barForInfo.calendarDate.get(Calendar.HOUR_OF_DAY)
                         Text(
                             String.format("%d %s, %02d:00", day, month, hour),
                             color = Color.White
