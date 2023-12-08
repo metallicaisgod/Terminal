@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Terminal</string>
+    <string name="minute_5">M5</string>
+    <string name="minute_15">M15</string>
+    <string name="minute_30">M30</string>
+    <string name="hour_1">H1</string>
+</resources>
