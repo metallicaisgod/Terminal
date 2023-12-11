@@ -142,10 +142,8 @@ fun BarInfo(
             .size(20.dp)
             .background(Color.Black, CircleShape)
             .border(1.dp, color = Color.White, CircleShape)
-            .pointerInput(key1 = Unit) {
-                detectTapGestures {
-                    onCloseClickListener()
-                }
+            .clickable {
+                onCloseClickListener()
             },
         tint = Color.White
     )
