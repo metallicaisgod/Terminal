@@ -69,14 +69,17 @@ fun Terminal(
 
             currentState.barsList.firstOrNull()?.let {
                 Prices(
-                    modifier = modifier,
+                    modifier = Modifier.padding(top = 32.dp),
                     terminalState = terminalState,
                     currentPrice = it.close,
                 )
             }
 
-            TimeFrames(currentTimeFrame = currentState.timeFrame) {
-                viewModel.loadContent(it)
+            TimeFrames(
+                modifier = Modifier.padding(top = 32.dp),
+                currentTimeFrame = currentState.timeFrame
+            ) {
+                viewModel.loadContent(currentState.currentTicker, it)
             }
 
             val barForInfo = currentState.barForInfo
@@ -85,6 +88,15 @@ fun Terminal(
                     viewModel.showBarInfo(null)
                 }
             }
+
+            SpinnerSample(
+                modifier = Modifier.padding(top=8.dp),
+                list = currentState.tickerList,
+                preselected = currentState.currentTicker,
+                onSelectionChanged = { ticker ->
+                    viewModel.loadContent(ticker, currentState.timeFrame)
+                }
+            )
         }
         TerminalScreenState.Initial -> {}
         TerminalScreenState.Loading -> {
@@ -159,11 +171,13 @@ fun Info(
             .width(150.dp)
             .wrapContentHeight()
     ) {
-        Text(modifier = Modifier.weight(1f),
+        Text(
+            modifier = Modifier.weight(1f),
             text = "$name:",
             color = Color.White
         )
-        Text(modifier = Modifier.weight(1f),
+        Text(
+            modifier = Modifier.weight(1f),
             text = "$value",
             color = Color.White,
             textAlign = TextAlign.Start
@@ -174,11 +188,12 @@ fun Info(
 
 @Composable
 private fun TimeFrames(
+    modifier: Modifier = Modifier,
     currentTimeFrame: TimeFrame,
     onTimeFrameChanged: (TimeFrame) -> Unit,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .wrapContentHeight()
             .padding(top = 16.dp, start = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -247,7 +262,8 @@ private fun Chart(
             .fillMaxSize()
             .background(Color.Black)
             .padding(
-                vertical = 32.dp
+                top = 64.dp,
+                bottom = 32.dp
             )
             .transformable(transformableState)
             .onSizeChanged {
@@ -438,11 +454,12 @@ fun DrawScope.drawLines(
     drawTextPrice(textMeasurer, currentPrice, currentPriceOffsetY)
     //min
     val minPriceOffsetY = size.height
+    drawTextPrice(textMeasurer, min, minPriceOffsetY, true)
+
     drawDashLine(
         start = Offset(0f, minPriceOffsetY),
         end = Offset(size.width, minPriceOffsetY)
     )
-    drawTextPrice(textMeasurer, min, minPriceOffsetY)
 
 }
 
@@ -450,6 +467,7 @@ fun DrawScope.drawTextPrice(
     textMeasurer: TextMeasurer,
     price: Float,
     offsetY: Float,
+    isMin: Boolean = false
 ) {
     val textLayoutResult = textMeasurer.measure(
         text = price.toString(),
@@ -460,7 +478,7 @@ fun DrawScope.drawTextPrice(
     )
     drawText(
         textLayoutResult = textLayoutResult,
-        topLeft = Offset(size.width - textLayoutResult.size.width - 4.dp.toPx(), offsetY)
+        topLeft = Offset(size.width - textLayoutResult.size.width - 4.dp.toPx(), offsetY - if(isMin) textLayoutResult.size.height  else 0)
     )
 }
 

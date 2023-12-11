@@ -5,6 +5,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import com.kirillm.terminal.ui.theme.TerminalTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,3 +22,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
