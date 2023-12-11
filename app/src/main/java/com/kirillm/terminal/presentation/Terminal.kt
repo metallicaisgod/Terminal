@@ -128,10 +128,10 @@ fun BarInfo(
                 String.format("%d %s, %02d:00", day, month, hour),
                 color = Color.White
             )
-            Info("open", bar.open)
-            Info("close", bar.close)
-            Info("high", bar.high)
-            Info("low", bar.low)
+            Info(stringResource(R.string.open_label), bar.open)
+            Info(stringResource(R.string.close_label), bar.close)
+            Info(stringResource(R.string.high_label), bar.high)
+            Info(stringResource(R.string.low_label), bar.low)
         }
     }
     Icon(

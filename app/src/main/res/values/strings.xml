@@ -4,4 +4,8 @@
     <string name="minute_15">M15</string>
     <string name="minute_30">M30</string>
     <string name="hour_1">H1</string>
+    <string name="open_label">open</string>
+    <string name="close_label">close</string>
+    <string name="high_label">high</string>
+    <string name="low_label">low</string>
 </resources>
