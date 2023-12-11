@@ -1,17 +1,16 @@
 package com.kirillm.terminal.presentation
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -32,6 +31,7 @@ import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -81,52 +81,8 @@ fun Terminal(
 
             val barForInfo = currentState.barForInfo
             if (barForInfo != null) {
-
-                Box(
-                    modifier = Modifier
-                        .wrapContentSize()
-                        .padding(top = 100.dp, start = 16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .background(Color.Black)
-                            .border(BorderStroke(1.dp, Color.White), RoundedCornerShape(10.dp))
-                            .padding(8.dp),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        val index = currentState.barsList.indexOf(barForInfo)
-                        Text(
-                            text = index.toString(),
-                            color = Color.White
-                        )
-                        Text(
-                            text = barForInfo.open.toString(),
-                            color = Color.White
-                        )
-                        Text(
-                            barForInfo.close.toString(),
-                            color = Color.White
-                        )
-                        Text(
-                            barForInfo.high.toString(),
-                            color = Color.White
-                        )
-                        Text(
-                            barForInfo.low.toString(),
-                            color = Color.White
-                        )
-                        val day = barForInfo.calendarDate.get(Calendar.DAY_OF_MONTH)
-                        val month = barForInfo.calendarDate.getDisplayName(
-                            Calendar.MONTH,
-                            Calendar.SHORT,
-                            Locale.getDefault()
-                        )
-                        val hour = barForInfo.calendarDate.get(Calendar.HOUR_OF_DAY)
-                        Text(
-                            String.format("%d %s, %02d:00", day, month, hour),
-                            color = Color.White
-                        )
-                    }
+                BarInfo(barForInfo) {
+                    viewModel.showBarInfo(null)
                 }
             }
         }
@@ -142,7 +98,79 @@ fun Terminal(
             }
         }
     }
+}
 
+@Composable
+fun BarInfo(
+    bar: Bar,
+    onCloseClickListener: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .wrapContentSize()
+            .padding(top = 100.dp, start = 16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .background(Color.Black)
+                .border(BorderStroke(1.dp, Color.White), RoundedCornerShape(10.dp))
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val day = bar.calendarDate.get(Calendar.DAY_OF_MONTH)
+            val month = bar.calendarDate.getDisplayName(
+                Calendar.MONTH,
+                Calendar.SHORT,
+                Locale.getDefault()
+            )
+            val hour = bar.calendarDate.get(Calendar.HOUR_OF_DAY)
+            Text(
+                String.format("%d %s, %02d:00", day, month, hour),
+                color = Color.White
+            )
+            Info("open", bar.open)
+            Info("close", bar.close)
+            Info("high", bar.high)
+            Info("low", bar.low)
+        }
+    }
+    Icon(
+        imageVector = Icons.Default.Close,
+        contentDescription = null,
+        modifier = Modifier
+            .padding(top = 90.dp, start = 6.dp)
+            .size(20.dp)
+            .background(Color.Black, CircleShape)
+            .border(1.dp, color = Color.White, CircleShape)
+            .pointerInput(key1 = Unit) {
+                detectTapGestures {
+                    onCloseClickListener()
+                }
+            },
+        tint = Color.White
+    )
+}
+
+@Composable
+fun Info(
+    name: String,
+    value: Float,
+) {
+    Row(
+        modifier = Modifier
+            .width(150.dp)
+            .wrapContentHeight()
+    ) {
+        Text(modifier = Modifier.weight(1f),
+            text = "$name:",
+            color = Color.White
+        )
+        Text(modifier = Modifier.weight(1f),
+            text = "$value",
+            color = Color.White,
+            textAlign = TextAlign.Start
+        )
+    }
 
 }
 
@@ -197,6 +225,7 @@ private fun Chart(
             0f,
             currentState.barList.size * currentState.barWidth - currentState.terminalWidth
         )
+//        Log.d("Terminal", "Scroll: $scrolledBy")
 
         onTerminalStateChanged(
             currentState.copy(
@@ -208,8 +237,11 @@ private fun Chart(
 
     val timeMeasurer = rememberTextMeasurer()
 
-    val clickOffsetX = rememberSaveable() {
+    val clickOffsetX = rememberSaveable {
         mutableStateOf(0f)
+    }
+    val wasClick = rememberSaveable {
+        mutableStateOf(false)
     }
 
     Canvas(
@@ -230,16 +262,19 @@ private fun Chart(
             }
             .pointerInput(key1 = Unit) {
                 detectTapGestures {
+//                    Log.d("Terminal", "Click: $clickOffset Scroll: ${currentState.scrolledBy}")
                     clickOffsetX.value = it.x
+                    wasClick.value = true
                 }
             }
 
     ) {
         with(currentState) {
             translate(left = scrolledBy) {
+                val clickOffset = clickOffsetX.value - scrolledBy
                 barList.forEachIndexed { index, bar ->
                     val offsetX = size.width - index * barWidth
-//                    Log.d("Terminal", offsetX.toString())
+//                    Log.d("Terminal", "Offset: $offsetX")
                     drawTimeDelimiters(
                         bar = bar,
                         nextBar = if (index < barList.size - 1) {
@@ -279,10 +314,10 @@ private fun Chart(
                         ),
                         strokeWidth = barWidth / 2
                     )
-                    val clickOffset = (size.width - clickOffsetX.value)
-                    if (clickOffset in ((offsetX - barWidth / 4)..(offsetX + barWidth / 4))) {
-                        Log.d("Terminal", "Click: $clickOffset")
+
+                    if (wasClick.value && clickOffset in ((offsetX - barWidth / 4)..(offsetX + barWidth / 4))) {
                         onClickListener(bar)
+                        wasClick.value = false
                     }
                 }
             }

@@ -36,7 +36,7 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun showBarInfo(bar: Bar) {
+    fun showBarInfo(bar: Bar?) {
         val currentState = _screenState.value as TerminalScreenState.Content
         _screenState.value = TerminalScreenState.Content(currentState.barsList, currentState.timeFrame, bar)
     }
